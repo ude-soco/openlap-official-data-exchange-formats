@@ -1,8 +1,8 @@
 package com.openlap.dynamicparam;
 
 public enum OpenLAPDynamicParamType {
-    Textbox,
-    Choice,
-    MultipleChoice,
-    Checkbox
+  Textbox,
+  Choice,
+  MultipleChoice,
+  Checkbox
 }
