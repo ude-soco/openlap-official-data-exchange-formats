@@ -14,7 +14,7 @@ verbose class names. All of the classes of the OpenLAP-DataSet use the prefix `O
 The `OpenLAPDataSet` is a grouping of `OpenLAPDataColumns`. Each of these Columns has two distinctive sections: A "
 metadata"
 section, for describing the Column `type`, `required` flag and its `id`. This section is encapsulated on a class called
-`OpenLAPColumnConfigurationData`, since it has the data required for checking configurations, which will be explained
+`OpenLAPColumnConfigData`, since it has the data required for checking configurations, which will be explained
 later.
 The second section is the data itself, represented as an array of the specified type.
 The `type` of the items contained in the data section requires to be the same `type` as the one specified on the
@@ -23,7 +23,7 @@ metadata section of the column. The diagram below describes an overview of an `O
 <table class="image">
 <caption align="bottom">
 Diagram describing the OpenLAPDataDet, note that it is similar to how a relational database table looks like, however,
-the <code>OpenLAPDataColumn</code> has two sections: The <code>OpenLAPColumnConfigurationData</code> and the data itself.
+the <code>OpenLAPDataColumn</code> has two sections: The <code>OpenLAPColumnConfigData</code> and the data itself.
 </caption>
 <tr><td><img src="https://github.com/OpenLearningAnalyticsPlatform/OpenLAP-Architecture/blob/master/OpenLAP-DataSet/OpenLAP-DataSet_DataSetConcept.png" alt="OpenLAP-DataSet_DataSetConcept.png"/></td></tr>
 </table>
@@ -32,10 +32,26 @@ In order to achieve this, a Factory design pattern [FactoryRef](#references) in 
 `OpenLAPDataColumnFactory`.
 The Factory enables the creation of `OpenLAPDataColumn` objects with a special type of enumerator parameter
 (`OpenLAPColumnDataType`)so the column's type always corresponds to it's data type.
-The `OpenLAPColumnDataType` supports the types of the primitives of a modern relational
-database such as MySQL or MicrosoftSQL. `OpenLAPDataColumn` objects should only be created trough the factory so the
-type
-correspondence is enforced.
+The public `OpenLAPColumnDataType` enum currently groups column data as `Text`, `Numeric`, or `TrueFalse`.
+`OpenLAPDataColumn` objects should only be created trough the factory so the type correspondence is enforced.
+
+### JSON enum values
+
+For `OpenLAPColumnConfigData.type`, new JSON payloads should use the current enum names:
+
+* `Text`
+* `Numeric`
+* `TrueFalse`
+
+Default Jackson serialization emits these current names. For backward compatibility, deserialization also accepts the
+legacy aliases used by older OpenLAP clients:
+
+* `STRING` -> `Text`
+* `INTEGER`, `FLOAT`, `LONG`, `SHORT`, `BYTE` -> `Numeric`
+* `BOOLEAN` -> `TrueFalse`
+
+The legacy aliases are accepted as input only. New examples and newly produced JSON should use `Text`, `Numeric`, and
+`TrueFalse`.
 
 A typical JSON representation of the `OpenLAPDataSet` of the previous figure is shown below:
 
@@ -44,7 +60,7 @@ A typical JSON representation of the `OpenLAPDataSet` of the previous figure is 
   "columns": {
     "column1": {
       "configurationData": {
-        "type": "STRING",
+        "type": "Text",
         "id": "column1",
         "required": false
       },
@@ -54,7 +70,7 @@ A typical JSON representation of the `OpenLAPDataSet` of the previous figure is 
     },
     "intColumn1": {
       "configurationData": {
-        "type": "INTEGER",
+        "type": "Numeric",
         "id": "intColumn1",
         "required": true
       },
@@ -67,7 +83,7 @@ A typical JSON representation of the `OpenLAPDataSet` of the previous figure is 
     },
     "stringColumn1": {
       "configurationData": {
-        "type": "STRING",
+        "type": "Text",
         "id": "stringColumn1",
         "required": true
       },
@@ -81,7 +97,7 @@ A typical JSON representation of the `OpenLAPDataSet` of the previous figure is 
 ```
 
 In order to provide the support for checking dynamically types, required fields and the presence of all the fields in
-order to map items from one `OpenLAPDataSet` to another, a class named `OpenLAPPortConfiguration` is provided.
+order to map items from one `OpenLAPDataSet` to another, a class named `OpenLAPPortConfig` is provided.
 This mapping represents the link between two `OpenLAPDataSet`, one denominated "output" since it outputs the
 data from an OpenLAP macro component (is the source of the data) and a second denominated "input" since it represents
 the consuming OpenLAP macro component of the data. Note that when making mappings, only the `required` fields of the
@@ -91,8 +107,8 @@ A representation of these concepts is shown in the figure.
 
 <table class="image">
 <caption align="bottom">
-The <code>OpenLAPPortConfiguration</code> is a grouping of tuples, called <code>OpenLAPPortMapping</code>, between output to input <code>OpenLAPDataSet</code>.
-Note that the <code>OpenLAPPortConfiguration</code> can be transmitted witouth the data. This configuration is validated by the input <code>OpenLAPDataSet</code>
+The <code>OpenLAPPortConfig</code> is a grouping of tuples, called <code>OpenLAPPortMapping</code>, between output to input <code>OpenLAPDataSet</code>.
+Note that the <code>OpenLAPPortConfig</code> can be transmitted witouth the data. This configuration is validated by the input <code>OpenLAPDataSet</code>
 </caption>
 <tr><td><img src="https://github.com/OpenLearningAnalyticsPlatform/OpenLAP-Architecture/blob/master/OpenLAP-DataSet/OpenLAP-DataSet_Configuration.png" alt="OpenLAP-DataSet_Configuration.png"/></td></tr>
 </table>
@@ -104,36 +120,36 @@ The mapping of the figure has the following JSON representation:
   "mapping": [
     {
       "outputPort": {
-        "type": "INTEGER",
+        "type": "Numeric",
         "id": "outCol1",
         "required": false
       },
       "inputPort": {
-        "type": "INTEGER",
+        "type": "Numeric",
         "id": "inCol3",
         "required": true
       }
     },
     {
       "outputPort": {
-        "type": "STRING",
+        "type": "Text",
         "id": "outCol2",
         "required": true
       },
       "inputPort": {
-        "type": "STRING",
+        "type": "Text",
         "id": "inCol2",
         "required": true
       }
     },
     {
       "outputPort": {
-        "type": "STRING",
+        "type": "Text",
         "id": "outCol3",
         "required": true
       },
       "inputPort": {
-        "type": "STRING",
+        "type": "Text",
         "id": "inCol1",
         "required": false
       }
@@ -142,19 +158,19 @@ The mapping of the figure has the following JSON representation:
 }
 ```
 
-Each `OpenLAPPortConfiguration` is an array of tuples (called `OpenLAPPortMapping` of the relevant metadata of columns
-(specifically, tuples of `OpenLAPColumnConfigurationData`)
+Each `OpenLAPPortConfig` is an array of tuples (called `OpenLAPPortMapping` of the relevant metadata of columns
+(specifically, tuples of `OpenLAPColumnConfigData`)
 that represent the link between each of the output `OpenLAPDataSet` columns
 to the input `OpenLAPDataSet` columns.
-The `OpenLAPDataSet` also has a method to check whether a `OpenLAPPortConfiguration` is compatible with it or not. This
+The `OpenLAPDataSet` also has a method to check whether a `OpenLAPPortConfig` is compatible with it or not. This
 method
 realizes the need of the OpenLAP-DataSet to allow for dynamic checking by validating that the incoming configuration
-is both type compatible and has all the required fields. I worth noting that since the `OpenLAPPortConfiguration` only
+is both type compatible and has all the required fields. I worth noting that since the `OpenLAPPortConfig` only
 has
-the metadata section of a column (`OpenLAPColumnConfigurationData`) and it is relatively lightweight then
+the metadata section of a column (`OpenLAPColumnConfigData`) and it is relatively lightweight then
 can be sent for validation between macro components before any bulk of data is transmitted.
-The result of the validation of a `OpenLAPPortConfiguration` is stored on a special Data Transfer Object called
-`OpenLAPDataSetConfigurationValidationResult` that contains a boolean flag with the result of the validation and a
+The result of the validation of a `OpenLAPPortConfig` is stored on a special Data Transfer Object called
+`OpenLAPDataSetConfigValidationResult` that contains a boolean flag with the result of the validation and a
 message
 field that contains a confirmation if the validation is successful or, if not, further information on the specific
 invalid fields.
@@ -217,50 +233,45 @@ the `OpenLAPDataColumnFactory`.
 ```java
 // Creating a OpenLAPDataSet
 
-import DataSet.*;
+import com.openlap.dataset.OpenLAPColumnDataType;
+import com.openlap.dataset.OpenLAPDataColumnFactory;
+import com.openlap.dataset.OpenLAPDataSet;
 
 OpenLAPDataSet dataSet1 = new OpenLAPDataSet();
-dataSet1.
-
-addOpenLAPDataColumn(
-		OpenLAPDataColumnFactory.createOpenLAPDataColumnOfType("intColumn1", OpenLAPColumnDataType.INTEGER,true));
-		dataSet1.
-
-addOpenLAPDataColumn(
-		OpenLAPDataColumnFactory.createOpenLAPDataColumnOfType("stringColumn1", OpenLAPColumnDataType.STRING,true));
-		dataSet1.
-
-addOpenLAPDataColumn(
-		OpenLAPDataColumnFactory.createOpenLAPDataColumnOfType("column1", OpenLAPColumnDataType.STRING,false));
+dataSet1.addOpenLAPDataColumn(
+    OpenLAPDataColumnFactory.createOpenLAPDataColumnOfType(
+        "intColumn1", OpenLAPColumnDataType.Numeric, true, null, null));
+dataSet1.addOpenLAPDataColumn(
+    OpenLAPDataColumnFactory.createOpenLAPDataColumnOfType(
+        "stringColumn1", OpenLAPColumnDataType.Text, true, null, null));
+dataSet1.addOpenLAPDataColumn(
+    OpenLAPDataColumnFactory.createOpenLAPDataColumnOfType(
+        "column1", OpenLAPColumnDataType.Text, false, null, null));
 ```
 
 ### Validating Configurations
 
-To validate whether a `OpenLAPPortConfiguration` from an output `OpenLAPDataSet` will be compatible with a given
+To validate whether a `OpenLAPPortConfig` from an output `OpenLAPDataSet` will be compatible with a given
 `OpenLAPDataSet`
 is possible to use the `OpenLAPDataSet` method for it as described below.
 
 ```java
-// Validating a OpenLAPPortConfiguration on a OpenLAPDataSet
-OpenLAPDataSetConfigurationValidationResult configurationValidationResult1 =
-		dataSet1.validateConfiguration(configuration1);
+// Validating a OpenLAPPortConfig on a OpenLAPDataSet
+import com.openlap.dataset.OpenLAPDataSetConfigValidationResult;
+
+OpenLAPDataSetConfigValidationResult configurationValidationResult =
+    dataSet1.validateConfiguration(configuration1);
 // Will print "Message: Valid configuration"
-System.out.
-
-println("Message: "+configurationValidationResult1.getValidationMessage());
-// Will pring "Validation status: true"
-		System.out.
-
-println("Validation status: "+dataSet1.validateConfiguration(configuration1).
-
-isValid());
+System.out.println("Message: " + configurationValidationResult.getValidationMessage());
+// Will print "Validation status: true"
+System.out.println("Validation status: " + configurationValidationResult.isValid());
 ```
 
 ### JSON representation
 
 The relevant classes of the OpenLAP-DataSet can use the built-in `toString()` method to obtain a JSON representation.
-The OpenLAP uses [jackson](#references) as it's main JSON serializer/deserializer.
-It is also possible to use other JSON serializer/deserializers.
+OpenLAP uses [jackson](#references) as its main JSON serializer/deserializer. With Jackson's default enum handling,
+`OpenLAPColumnConfigData.type` is written as `Text`, `Numeric`, or `TrueFalse`.
 
 ## REFERENCES
 
