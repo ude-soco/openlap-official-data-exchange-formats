@@ -3,6 +3,8 @@ package com.openlap.dynamicparam;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.Objects;
+
 public class OpenLAPDynamicParam<T> {
 
   private final OpenLAPDynamicParamType type;
@@ -114,8 +116,9 @@ public class OpenLAPDynamicParam<T> {
   }
 
   public boolean validateDynamicParam(OpenLAPDynamicParam openLAPDynamicParam) {
-    return openLAPDynamicParam.getType().equals(this.getType())
-        && (openLAPDynamicParam.getId().equals(this.getId()));
+    return openLAPDynamicParam != null
+        && Objects.equals(openLAPDynamicParam.getType(), this.getType())
+        && Objects.equals(openLAPDynamicParam.getId(), this.getId());
   }
 
   @Override

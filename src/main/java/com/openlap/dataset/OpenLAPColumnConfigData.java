@@ -3,6 +3,8 @@ package com.openlap.dataset;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.Objects;
+
 /**
  * This class contains the configuration data of a OpenLAPDataColumn, it is encapsulated for easy
  * comparison of configurations and for serialization separated from the data.
@@ -113,8 +115,9 @@ public class OpenLAPColumnConfigData {
    */
   public boolean validateConfigurationDataCorrespondence(
       OpenLAPColumnConfigData openLAPColumnConfigData) {
-    return openLAPColumnConfigData.getType().equals(this.getType())
-        && (openLAPColumnConfigData.getId().equals(this.getId()));
+    return openLAPColumnConfigData != null
+        && Objects.equals(openLAPColumnConfigData.getType(), this.getType())
+        && Objects.equals(openLAPColumnConfigData.getId(), this.getId());
   }
 
   /**
@@ -127,7 +130,8 @@ public class OpenLAPColumnConfigData {
    */
   public boolean validateConfigurationDataTypeFromOutputPort(
       OpenLAPColumnConfigData outputPortConfigData) {
-    return outputPortConfigData.getType().equals(this.getType())
+    return outputPortConfigData != null
+        && Objects.equals(outputPortConfigData.getType(), this.getType())
         && (outputPortConfigData.getId() != null && !outputPortConfigData.getId().isEmpty());
   }
 
@@ -139,18 +143,12 @@ public class OpenLAPColumnConfigData {
     OpenLAPColumnConfigData that = (OpenLAPColumnConfigData) o;
 
     // if (isRequired() && isRequired() != that.isRequired()) return false;
-    if (getType() != that.getType()) return false;
-    return getId().equals(that.getId());
+    return getType() == that.getType() && Objects.equals(getId(), that.getId());
   }
 
   @Override
   public int hashCode() {
-    int result = getType().hashCode();
-    result = 31 * result + getId().hashCode();
-    result = 31 * result + (isRequired() ? 1 : 0);
-    result = 31 * result + getTitle().hashCode();
-    result = 31 * result + getDescription().hashCode();
-    return result;
+    return Objects.hash(getType(), getId());
   }
 
   /**

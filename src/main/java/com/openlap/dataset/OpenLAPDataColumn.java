@@ -1,6 +1,7 @@
 package com.openlap.dataset;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 /**
  * This class is a grouping of a OpenLAPColumnConfigData and the data that the
@@ -69,16 +70,12 @@ public class OpenLAPDataColumn<T> {
 
     OpenLAPDataColumn<?> that = (OpenLAPDataColumn<?>) o;
 
-    if (getConfigurationData() != null
-        ? !getConfigurationData().equals(that.getConfigurationData())
-        : that.getConfigurationData() != null) return false;
-    return !(getData() != null ? !getData().equals(that.getData()) : that.getData() != null);
+    return Objects.equals(getConfigurationData(), that.getConfigurationData())
+        && Objects.equals(getData(), that.getData());
   }
 
   @Override
   public int hashCode() {
-    int result = getConfigurationData() != null ? getConfigurationData().hashCode() : 0;
-    result = 31 * result + (getData() != null ? getData().hashCode() : 0);
-    return result;
+    return Objects.hash(getConfigurationData(), getData());
   }
 }
