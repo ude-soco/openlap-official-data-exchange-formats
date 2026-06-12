@@ -13,6 +13,10 @@ public class OpenLAPDynamicParamFactory {
       String possibleValues,
       boolean required)
       throws OpenLAPDynamicParamException {
+    if (dataType == null) {
+      throw new OpenLAPDynamicParamException("Data type not supported");
+    }
+
     switch (dataType) {
       case STRING:
         return new OpenLAPDynamicParam<String>(

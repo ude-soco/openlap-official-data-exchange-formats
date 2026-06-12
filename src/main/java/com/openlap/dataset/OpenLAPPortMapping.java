@@ -3,6 +3,8 @@ package com.openlap.dataset;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.util.Objects;
+
 /**
  * This class represents a tuple or 'mapping' entry between two ports. It has a outputPort which
  * represents an entry of the configuration of the macro component GIVING data and an inputPort,
@@ -47,15 +49,15 @@ public class OpenLAPPortMapping {
 
   @Override
   public int hashCode() {
-    return outputPort.hashCode() ^ inputPort.hashCode();
+    return Objects.hash(outputPort, inputPort);
   }
 
   @Override
   public boolean equals(Object o) {
     if (!(o instanceof OpenLAPPortMapping)) return false;
     OpenLAPPortMapping mapping = (OpenLAPPortMapping) o;
-    return this.outputPort.equals(mapping.getOutputPort())
-        && this.inputPort.equals(mapping.getInputPort());
+    return Objects.equals(this.outputPort, mapping.getOutputPort())
+        && Objects.equals(this.inputPort, mapping.getInputPort());
   }
 
   /**

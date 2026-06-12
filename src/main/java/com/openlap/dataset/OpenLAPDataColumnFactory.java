@@ -23,6 +23,10 @@ public class OpenLAPDataColumnFactory {
   public static final OpenLAPDataColumn createOpenLAPDataColumnOfType(
       String id, OpenLAPColumnDataType type, boolean isRequired, String title, String description)
       throws OpenLAPDataColumnException {
+    if (type == null) {
+      throw new OpenLAPDataColumnException("Data type not supported");
+    }
+
     switch (type) {
       case Text:
         return new OpenLAPDataColumn<String>(

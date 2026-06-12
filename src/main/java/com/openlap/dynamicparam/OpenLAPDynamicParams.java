@@ -25,6 +25,9 @@ public class OpenLAPDynamicParams {
       throws OpenLAPDynamicParamException {
     if (param == null)
       throw new OpenLAPDynamicParamException("No dynamic parameter object to add.");
+    if (params == null) {
+      params = new HashMap<String, OpenLAPDynamicParam>();
+    }
 
     String paramId = param.getId();
     if (paramId == null || paramId.isEmpty() || params.containsKey(paramId))

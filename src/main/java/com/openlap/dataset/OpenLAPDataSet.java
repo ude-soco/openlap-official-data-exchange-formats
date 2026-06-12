@@ -6,6 +6,7 @@ import com.openlap.exceptions.OpenLAPDataColumnException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The main component of data transfer and validation in OpenLAP. This DataStructure fulfils two
@@ -39,8 +40,11 @@ public class OpenLAPDataSet {
    * @throws OpenLAPDataColumnException
    */
   public void addOpenLAPDataColumn(OpenLAPDataColumn<?> column) throws OpenLAPDataColumnException {
+    if (column == null || column.getConfigurationData() == null) {
+      throw new OpenLAPDataColumnException(OpenLAPDataColumnException.COLUMN_ALREADY_EXISTS, null);
+    }
     String columnId = column.getConfigurationData().getId();
-    if (columns.containsKey(columnId) || columnId.isEmpty() || columnId == null)
+    if (columnId == null || columnId.isEmpty() || columns.containsKey(columnId))
       throw new OpenLAPDataColumnException(
           OpenLAPDataColumnException.COLUMN_ALREADY_EXISTS, columnId);
     else {
@@ -247,9 +251,7 @@ public class OpenLAPDataSet {
 
     OpenLAPDataSet that = (OpenLAPDataSet) o;
 
-    return !(getColumns() != null
-        ? !getColumns().equals(that.getColumns())
-        : that.getColumns() != null);
+    return Objects.equals(getColumns(), that.getColumns());
   }
 
   @Override

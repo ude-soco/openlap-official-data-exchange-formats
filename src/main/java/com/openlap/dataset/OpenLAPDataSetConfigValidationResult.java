@@ -63,7 +63,7 @@ public class OpenLAPDataSetConfigValidationResult {
    * @return The new validation message.
    */
   public String appendValidationMessage(String message) {
-    if (this.validationMessage.isEmpty() || this.validationMessage == null)
+    if (this.validationMessage == null || this.validationMessage.isEmpty())
       this.validationMessage = message;
     else this.validationMessage = this.validationMessage + System.lineSeparator() + message;
     return this.validationMessage;
