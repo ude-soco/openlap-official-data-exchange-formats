@@ -55,6 +55,7 @@ public enum OpenLAPColumnDataType {
 
   @Override
   public String toString() {
+    // Kept for legacy validation messages; Jackson's default JSON output uses enum names.
     return legacyName;
   }
 }

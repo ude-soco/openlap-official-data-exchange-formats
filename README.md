@@ -1,41 +1,63 @@
 # OpenLAP Data Exchange Formats
 
-# 1. OpenLAP-DataSet
+Java data exchange objects for OpenLAP datasets, port mappings, and dynamic parameters.
 
-## FUNCTIONALITY AND INTERNALS
+This is a Maven Java library. It does not provide a Spring Boot application, web server, database
+configuration, or deployment runtime.
 
-Since the OpenLAP-DataSet functions much like a column-based NoSQL databases. It is based on the concept of a
-simple aggregation of data arrays with a common denominator (an ID). These data arrays can be marked as required or not.
-The grouping of these "Columns" is the OpenLAP-DataSet.
+## Installation
 
-A naming scheme was developed in order to ease the usage of the OpenLAP-DataSet in code while aiming to maintain less
-verbose class names. All of the classes of the OpenLAP-DataSet use the prefix `OpenLAP`.
+This repository builds the Maven artifact declared in `pom.xml`:
 
-The `OpenLAPDataSet` is a grouping of `OpenLAPDataColumns`. Each of these Columns has two distinctive sections: A "
-metadata"
-section, for describing the Column `type`, `required` flag and its `id`. This section is encapsulated on a class called
-`OpenLAPColumnConfigData`, since it has the data required for checking configurations, which will be explained
-later.
-The second section is the data itself, represented as an array of the specified type.
-The `type` of the items contained in the data section requires to be the same `type` as the one specified on the
-metadata section of the column. The diagram below describes an overview of an `OpenLAPDataSet`.
+```xml
+<dependency>
+    <groupId>com.openlap</groupId>
+    <artifactId>openlap-data-exchange-format</artifactId>
+    <version>1.0-SNAPSHOT</version>
+</dependency>
+```
 
-<table class="image">
-<caption align="bottom">
-Diagram describing the OpenLAPDataDet, note that it is similar to how a relational database table looks like, however,
-the <code>OpenLAPDataColumn</code> has two sections: The <code>OpenLAPColumnConfigData</code> and the data itself.
-</caption>
-<tr><td><img src="https://github.com/OpenLearningAnalyticsPlatform/OpenLAP-Architecture/blob/master/OpenLAP-DataSet/OpenLAP-DataSet_DataSetConcept.png" alt="OpenLAP-DataSet_DataSetConcept.png"/></td></tr>
-</table>
+If consuming a published OpenLAP build, use the repository and version coordinates published for
+that build.
 
-In order to achieve this, a Factory design pattern [FactoryRef](#references) in the form of the class
-`OpenLAPDataColumnFactory`.
-The Factory enables the creation of `OpenLAPDataColumn` objects with a special type of enumerator parameter
-(`OpenLAPColumnDataType`)so the column's type always corresponds to it's data type.
-The public `OpenLAPColumnDataType` enum currently groups column data as `Text`, `Numeric`, or `TrueFalse`.
-`OpenLAPDataColumn` objects should only be created trough the factory so the type correspondence is enforced.
+## Basic Usage
 
-### JSON enum values
+`OpenLAPDataSet` groups `OpenLAPDataColumn` objects by column id. Each column has:
+
+* `configurationData`, represented by `OpenLAPColumnConfigData`
+* `data`, represented as an array of values for that column
+
+Use `OpenLAPDataColumnFactory` to create columns with the current public enum values:
+
+```java
+import com.openlap.dataset.OpenLAPColumnDataType;
+import com.openlap.dataset.OpenLAPDataColumnFactory;
+import com.openlap.dataset.OpenLAPDataSet;
+
+OpenLAPDataSet dataSet = new OpenLAPDataSet();
+dataSet.addOpenLAPDataColumn(
+    OpenLAPDataColumnFactory.createOpenLAPDataColumnOfType(
+        "intColumn1", OpenLAPColumnDataType.Numeric, true, null, null));
+dataSet.addOpenLAPDataColumn(
+    OpenLAPDataColumnFactory.createOpenLAPDataColumnOfType(
+        "stringColumn1", OpenLAPColumnDataType.Text, true, null, null));
+dataSet.addOpenLAPDataColumn(
+    OpenLAPDataColumnFactory.createOpenLAPDataColumnOfType(
+        "column1", OpenLAPColumnDataType.Text, false, null, null));
+```
+
+`OpenLAPPortConfig` contains `OpenLAPPortMapping` entries that map output column configuration to
+input column configuration. A dataset can validate whether a port config is compatible with it:
+
+```java
+import com.openlap.dataset.OpenLAPDataSetConfigValidationResult;
+
+OpenLAPDataSetConfigValidationResult result = dataSet.validateConfiguration(configuration);
+System.out.println("Message: " + result.getValidationMessage());
+System.out.println("Validation status: " + result.isValid());
+```
+
+## JSON Contract
 
 For `OpenLAPColumnConfigData.type`, new JSON payloads should use the current enum names:
 
@@ -43,17 +65,9 @@ For `OpenLAPColumnConfigData.type`, new JSON payloads should use the current enu
 * `Numeric`
 * `TrueFalse`
 
-Default Jackson serialization emits these current names. For backward compatibility, deserialization also accepts the
-legacy aliases used by older OpenLAP clients:
+With Jackson's default enum handling, serialization emits these current names.
 
-* `STRING` -> `Text`
-* `INTEGER`, `FLOAT`, `LONG`, `SHORT`, `BYTE` -> `Numeric`
-* `BOOLEAN` -> `TrueFalse`
-
-The legacy aliases are accepted as input only. New examples and newly produced JSON should use `Text`, `Numeric`, and
-`TrueFalse`.
-
-A typical JSON representation of the `OpenLAPDataSet` of the previous figure is shown below:
+### OpenLAPDataSet
 
 ```json
 {
@@ -96,24 +110,7 @@ A typical JSON representation of the `OpenLAPDataSet` of the previous figure is 
 }
 ```
 
-In order to provide the support for checking dynamically types, required fields and the presence of all the fields in
-order to map items from one `OpenLAPDataSet` to another, a class named `OpenLAPPortConfig` is provided.
-This mapping represents the link between two `OpenLAPDataSet`, one denominated "output" since it outputs the
-data from an OpenLAP macro component (is the source of the data) and a second denominated "input" since it represents
-the consuming OpenLAP macro component of the data. Note that when making mappings, only the `required` fields of the
-input `OpenLAPDataSet` are enforced to have an input mapping, that is, fields marked as required on the output DataSet
-are not treated differently than those not required. The field is shown for completeness.
-A representation of these concepts is shown in the figure.
-
-<table class="image">
-<caption align="bottom">
-The <code>OpenLAPPortConfig</code> is a grouping of tuples, called <code>OpenLAPPortMapping</code>, between output to input <code>OpenLAPDataSet</code>.
-Note that the <code>OpenLAPPortConfig</code> can be transmitted witouth the data. This configuration is validated by the input <code>OpenLAPDataSet</code>
-</caption>
-<tr><td><img src="https://github.com/OpenLearningAnalyticsPlatform/OpenLAP-Architecture/blob/master/OpenLAP-DataSet/OpenLAP-DataSet_Configuration.png" alt="OpenLAP-DataSet_Configuration.png"/></td></tr>
-</table>
-
-The mapping of the figure has the following JSON representation:
+### OpenLAPPortConfig
 
 ```json
 {
@@ -158,128 +155,46 @@ The mapping of the figure has the following JSON representation:
 }
 ```
 
-Each `OpenLAPPortConfig` is an array of tuples (called `OpenLAPPortMapping` of the relevant metadata of columns
-(specifically, tuples of `OpenLAPColumnConfigData`)
-that represent the link between each of the output `OpenLAPDataSet` columns
-to the input `OpenLAPDataSet` columns.
-The `OpenLAPDataSet` also has a method to check whether a `OpenLAPPortConfig` is compatible with it or not. This
-method
-realizes the need of the OpenLAP-DataSet to allow for dynamic checking by validating that the incoming configuration
-is both type compatible and has all the required fields. I worth noting that since the `OpenLAPPortConfig` only
-has
-the metadata section of a column (`OpenLAPColumnConfigData`) and it is relatively lightweight then
-can be sent for validation between macro components before any bulk of data is transmitted.
-The result of the validation of a `OpenLAPPortConfig` is stored on a special Data Transfer Object called
-`OpenLAPDataSetConfigValidationResult` that contains a boolean flag with the result of the validation and a
-message
-field that contains a confirmation if the validation is successful or, if not, further information on the specific
-invalid fields.
+## Legacy Compatibility
 
-## USAGE
+Older OpenLAP clients may send legacy type labels. Deserialization accepts these aliases:
 
-### Importing into a project
+* `STRING` -> `Text`
+* `INTEGER`, `FLOAT`, `LONG`, `SHORT`, `BYTE` -> `Numeric`
+* `BOOLEAN` -> `TrueFalse`
 
-**Step 1.** The JitPack repository must be added to the build file:
+The legacy aliases are accepted as input for backward compatibility. New payloads should use
+`Text`, `Numeric`, and `TrueFalse`.
 
-Maven:
+`OpenLAPColumnDataType.toString()` currently returns legacy labels, and validation messages use
+those labels:
 
-```xml
+* `OpenLAPColumnDataType.Text.toString()` -> `STRING`
+* `OpenLAPColumnDataType.Numeric.toString()` -> `INTEGER`
+* `OpenLAPColumnDataType.TrueFalse.toString()` -> `BOOLEAN`
 
-<repository>
-    <id>jitpack.io</id>
-    <url>https://jitpack.io</url>
-</repository>
+For example, a type mismatch currently reports:
+
+```text
+Port bananito expected STRING, got INTEGER instead.
 ```
 
-Gradle:
+This behavior is compatibility-tested and should not be changed without an explicit migration plan.
 
-```gradle
-repositories {
-    maven {
-        url "https://jitpack.io"
-        credentials { username authToken }
-    }
-}
+## Development
+
+Use the Maven Wrapper for reproducible local builds:
+
+```sh
+./mvnw clean test
+./mvnw dependency:tree
+git diff --check
 ```
 
-**Step 2.**  The deoendency must be added:
+The build enforces Java 11 or newer and Maven 3.9 or newer.
 
-Maven:
+## References
 
-```xml
-
-<dependency>
-    <groupId>com.github.OpenLearningAnalyticsPlatform</groupId>
-    <artifactId>OpenLAP-DataSet</artifactId>
-    <version>-SNAPSHOT</version>
-</dependency>
-```
-
-Gradle:
-
-```gradle
-dependencies {
-	        compile 'com.github.OpenLearningAnalyticsPlatform:OpenLAP-DataSet:-SNAPSHOT'
-}
-```
-
-### Using the OpenLAP-DataSet
-
-### Creating Columns using the OpenLAPDataColumnFactory
-
-In order to create a `OpenLAPDataSet`, as explained before, the `OpenLAPDataColumns` must be declared with the help of
-the `OpenLAPDataColumnFactory`.
-
-```java
-// Creating a OpenLAPDataSet
-
-import com.openlap.dataset.OpenLAPColumnDataType;
-import com.openlap.dataset.OpenLAPDataColumnFactory;
-import com.openlap.dataset.OpenLAPDataSet;
-
-OpenLAPDataSet dataSet1 = new OpenLAPDataSet();
-dataSet1.addOpenLAPDataColumn(
-    OpenLAPDataColumnFactory.createOpenLAPDataColumnOfType(
-        "intColumn1", OpenLAPColumnDataType.Numeric, true, null, null));
-dataSet1.addOpenLAPDataColumn(
-    OpenLAPDataColumnFactory.createOpenLAPDataColumnOfType(
-        "stringColumn1", OpenLAPColumnDataType.Text, true, null, null));
-dataSet1.addOpenLAPDataColumn(
-    OpenLAPDataColumnFactory.createOpenLAPDataColumnOfType(
-        "column1", OpenLAPColumnDataType.Text, false, null, null));
-```
-
-### Validating Configurations
-
-To validate whether a `OpenLAPPortConfig` from an output `OpenLAPDataSet` will be compatible with a given
-`OpenLAPDataSet`
-is possible to use the `OpenLAPDataSet` method for it as described below.
-
-```java
-// Validating a OpenLAPPortConfig on a OpenLAPDataSet
-import com.openlap.dataset.OpenLAPDataSetConfigValidationResult;
-
-OpenLAPDataSetConfigValidationResult configurationValidationResult =
-    dataSet1.validateConfiguration(configuration1);
-// Will print "Message: Valid configuration"
-System.out.println("Message: " + configurationValidationResult.getValidationMessage());
-// Will print "Validation status: true"
-System.out.println("Validation status: " + configurationValidationResult.isValid());
-```
-
-### JSON representation
-
-The relevant classes of the OpenLAP-DataSet can use the built-in `toString()` method to obtain a JSON representation.
-OpenLAP uses [jackson](#references) as its main JSON serializer/deserializer. With Jackson's default enum handling,
-`OpenLAPColumnConfigData.type` is written as `Text`, `Numeric`, or `TrueFalse`.
-
-## REFERENCES
-
-* [MySQLRef]: "MySQL. (2015, December 24). MySQL 5.7 Reference Manual.
-  Retrieved from http://dev.mysql.com/doc/refman/5.7/en/data-types.html"
-* [FactoryRef]: Gamma, E., Helm, R., Johnson, R., & Vlissides, J. (1994).
-  Design patterns: elements of reusable object-oriented software. Pearson Education.
-* [jackson]: "Jackson. (2009). Jackson Project Home @github.
-  Retrieved from https://github.com/FasterXML/jackson"
-
-# 2. OpenLAP-DynamicParams
+* Gamma, E., Helm, R., Johnson, R., & Vlissides, J. (1994). Design patterns:
+  elements of reusable object-oriented software. Pearson Education.
+* Jackson Project: https://github.com/FasterXML/jackson
