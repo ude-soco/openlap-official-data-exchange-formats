@@ -67,7 +67,7 @@
                                     <version>[11,)</version>
                                 </requireJavaVersion>
                                 <requireMavenVersion>
-                                    <version>[3.9.0,)</version>
+                                    <version>[3.6.3,)</version>
                                 </requireMavenVersion>
                                 <dependencyConvergence/>
                                 <banDuplicatePomDependencyVersions/>
